@@ -74,11 +74,13 @@ cak-audio/
 ```                 
 
 ## Examples 
+```
 cak_detector_analysis.png - shown in paper, figure of learned kernel behavior
 cak_freq_response_analysis.png - demonstrates learned frequency response of the kernel
 extracted_training_history.png - shown in paper, training metrics
 spectral_difference_validation.png - demonstrates that CAK processing produces spectral modifications beyond simple amplitude scaling, with frequency-dependent filtering effects visible in the spectral difference plot
 test_signal_analysis.png - test signals (sine waves, noise, chirps, impulses) reveal CAK's frequency-dependent processing, showing adaptive transformation based on input characteristics.
+```  
 
 ## Troubleshooting
 GUI appears cut off: Adjust window_width (line ~560) in cak_gui_minimal.py
