@@ -1,0 +1,20 @@
+{
+  "global_low": -0.0001081228256225586,
+  "global_high": 4.194316387176514,
+  "alpha": 10.0,
+  "gamma": 0.85,
+  "compression": "sqrt",
+  "percentiles": [
+    0.01,
+    99.99
+  ],
+  "n_fft": 2048,
+  "hop_length": 512,
+  "win_length": 2048,
+  "sample_rate": 44100,
+  "histogram_range": [
+    -1.9999741315841675,
+    6.539163589477539
+  ],
+  "computed_from_n_files": 200
+}
