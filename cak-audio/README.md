@@ -60,13 +60,16 @@ Like any audio effect, results vary by source material. Some audio will result i
 ## Project Structure
 cak-audio/
 ├── cak_gui_minimal.py           # GUI application
-├── cak_main_sandbox.py          # Training script  
+├── cak_main_sandbox.py          # Training script
 ├── dataset_format_example.py    # Dataset structure example
-├── wgan_grain_output/
-│   └── final_wgan_grain.pt      # Pre-trained weights (694 KB)
-├── examples/                       # Additional ablations
+├── examples/                    # Additional ablations
+├── norm_stats/                  # Normalization parameters
+│   └── global_normalization_stats.json
+├── wgan_grain_output/           # Pre-trained model
+│   └── final_wgan_grain.pt      # Weights (694 KB)
+├── LICENSE                      # MIT License
 ├── requirements.txt             # Python dependencies
-└── README.md                    # This file
+└── README.md                    
 
 ## Examples 
 cak_detector_analysis.png - shown in paper, figure of learned kernel behavior
