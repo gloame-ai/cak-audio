@@ -61,7 +61,7 @@ cak-audio/
 ├── dataset_format_example.py    # Dataset structure example
 ├── wgan_grain_output/
 │   └── final_wgan_grain.pt      # Pre-trained weights (694 KB)
-├── examples/                       # Further ablations not shown in the paper
+├── examples/                       # Additional ablations
 ├── requirements.txt             # Python dependencies
 └── README.md                    # This file
 
