@@ -58,6 +58,7 @@ The "audit game" (AuGAN) trains both generator and discriminator to cooperate in
 Like any audio effect, results vary by source material. Some audio will result in a more nuanced effect than others. We have found that transient heavy material (like percussion/drum loops) respond very well to this implementation of the CAK processor. Further, dense mid-range spectra with rich harmonic content appears to generate a temporal smearing effect, similar to what one may find in a chorus or phaser. We also acknowledge the limitations of mono outputs in the GUI. As we are introducing a baseline method, future applications will include stereo with further research. Happy experimenting! 
 
 ## Project Structure
+```
 cak-audio/
 ├── cak_gui_minimal.py           # GUI application
 ├── cak_main_sandbox.py          # Training script
@@ -69,7 +70,8 @@ cak-audio/
 │   └── final_wgan_grain.pt      # Weights (694 KB)
 ├── LICENSE                      # MIT License
 ├── requirements.txt             # Python dependencies
-└── README.md                    
+└── README.md
+```                 
 
 ## Examples 
 cak_detector_analysis.png - shown in paper, figure of learned kernel behavior
