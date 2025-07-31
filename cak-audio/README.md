@@ -19,15 +19,18 @@ Demo audio clips are provided for research and demonstration purposes only. Comm
 git clone https://github.com/gloame-ai/cak-audio.git
 cd cak-audio
 pip install -r requirements.txt
+```
 Note: The GUI requires tkinter, which usually comes with Python. If you get an import error:
 
 Ubuntu/Debian: sudo apt-get install python3-tk
 macOS: Should be included with Python
 Windows: Should be included with Python
 
-Usage
+## Usage
 Quick Start (GUI)
-bashpython cak_gui_minimal.py
+```bash
+python cak_gui_minimal.py
+```
 
 Click "Drop audio file or browse" to load an audio file
 Adjust the texture control slider (0 = no effect, 0.3+ = increasing effect)
@@ -47,14 +50,14 @@ Note: Preprocessing code is not included, as implementations vary by use case. T
 
 Training with 200 15-second samples with our configuration takes ~2 hours for 100 epochs on Apple M4 (48GB). We have found that the model generalizes meaningfully by epoch 75, it is worth experimenting with different checkpoints to see what your model has learned along the way.
 
-How It Works
+## How It Works 
 CAK uses a simple principle:
 output = input + (learned_pattern × control)
 The "audit game" (AuGAN) trains both generator and discriminator to cooperate in verifying that the control value was correctly applied, leading to learned transformations. Users should feel free to experiment with alternate kernel configurations or attempting to encode specific attributes paired with the control value. This is an area of research we are performing, with some promising results, but more ablations are needed. 
 
 Like any audio effect, results vary by source material. Some audio will result in a more nuanced effect than others. We have found that transient heavy material (like percussion/drum loops) respond very well to this implementation of the CAK processor. Further, dense mid-range spectra with rich harmonic content appears to generate a temporal smearing effect, similar to what one may find in a chorus or phaser. We also acknowledge the limitations of mono outputs in the GUI. As we are introducing a baseline method, future applications will include stereo with further research. Happy experimenting! 
 
-Project Structure
+## Project Structure
 cak-audio/
 ├── cak_gui_minimal.py           # GUI application
 ├── cak_main_sandbox.py          # Training script  
@@ -65,23 +68,23 @@ cak-audio/
 ├── requirements.txt             # Python dependencies
 └── README.md                    # This file
 
-Examples 
+## Examples 
 cak_detector_analysis.png - shown in paper, figure of learned kernel behavior
 cak_freq_response_analysis.png - demonstrates learned frequency response of the kernel
 extracted_training_history.png - shown in paper, training metrics
 spectral_difference_validation.png - demonstrates that CAK processing produces spectral modifications beyond simple amplitude scaling, with frequency-dependent filtering effects visible in the spectral difference plot
 test_signal_analysis.png - test signals (sine waves, noise, chirps, impulses) reveal CAK's frequency-dependent processing, showing adaptive transformation based on input characteristics.
 
-Troubleshooting
+## Troubleshooting
 GUI appears cut off: Adjust window_width (line ~560) in cak_gui_minimal.py
 Import errors: Make sure all requirements are installed, especially sounddevice for audio playback
 CUDA/MPS errors: The code automatically falls back to CPU if GPU isn't available
 
-License
+## License
 MIT License - see LICENSE file for details
 
-Authors
+## Authors
 Austin Rockman (austin@gloame.ai)
 
-Acknowledgments
+## Acknowledgments
 Roopam Garg, also of Gloame AI, implemented the demonstration GUI, contributed to identity preservation logic, and provided iterative feedback.
