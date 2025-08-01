@@ -29,11 +29,11 @@ Quick Start (GUI)
 python cak_gui_minimal.py
 ```
 
-Click "Drop audio file or browse" to load an audio file
-Adjust the texture control slider (0 = no effect, 0.3+ = increasing effect)
-Click "PROCESS" to apply the effect
-Use playback controls to compare original vs processed
-Save your processed audio with the "Save" button
+1. Click "Drop audio file or browse" to load an audio file
+2. Adjust the texture control slider (0 = no effect, 0.3+ = increasing effect)
+3. Click "PROCESS" to apply the effect
+4. Use playback controls to compare original vs processed
+5. Save your processed audio with the "Save" button
 
 Note: Processing time depends on audio length. A 2-minute file takes ~3-4 seconds on Apple Silicon.
 
