@@ -8,7 +8,7 @@ CAK (Conditioning Aware Kernels) discovers audio transformations directly from d
 
 Read the paper: 
 
-Listen to demos of observed behavior [here](https://drive.google.com/drive/folders/1SRRxOFX6zX1jJoMMP-KKnqdN4D2U38O3?usp=drive_link). (Audio files include CAK effect level as "0.0" up to "2.0") 
+Listen to demos of observed behavior [here](https://drive.google.com/drive/folders/1SRRxOFX6zX1jJoMMP-KKnqdN4D2U38O3?usp=drive_link). (Audio files list CAK effect level as "0.0" up to "2.0") 
 
 
 Demo audio clips are provided for research and demonstration purposes only. Commercial use is not permitted. The clips remain property of their respective copyright holders and are used here under fair use. 
