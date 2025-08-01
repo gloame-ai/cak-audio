@@ -20,11 +20,8 @@ git clone https://github.com/gloame-ai/cak-audio.git
 cd cak-audio
 pip install -r requirements.txt
 ```
-Note: The GUI requires tkinter, which usually comes with Python. If you get an import error:
 
-Ubuntu/Debian: sudo apt-get install python3-tk
-macOS: Should be included with Python
-Windows: Should be included with Python
+Note: The GUI requires tkinter, which usually comes with Python on Mac & Windows. 
 
 ## Usage
 Quick Start (GUI)
