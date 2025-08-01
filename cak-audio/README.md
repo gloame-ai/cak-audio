@@ -45,7 +45,7 @@ Training Your Own Model
 
 Note: Preprocessing code is not included, as implementations vary by use case. The expected format is magnitude spectrograms (2048 FFT, 512 hop) saved as .npz files with accompanying JSON metadata.
 
-Training with 200 15-second samples with our configuration takes ~2 hours for 100 epochs on Apple M4 (48GB). We have found that the model generalizes meaningfully by epoch 75, it is worth experimenting with different checkpoints to see what your model has learned along the way.
+Training with 200 15-second samples with our configuration takes ~2 hours for 100 epochs on Apple M4 (48GB). We have found that the model generalizes meaningfully by epoch 75, it is worth experimenting with different checkpoints to see what your model has learned along the way. Given that this is a single kernel method, learning should be fairly rapid. 
 
 ## How It Works 
 CAK uses a simple principle:
