@@ -581,10 +581,3 @@ def plot_wgan_history(history):
 if __name__ == "__main__":
     # train with WGAN-GP and soft gates
     history = train_wgan_gp(num_epochs=100)
-
-    print("\n=== Training Complete ===")
-    print("Key improvements:")
-    print("1. WGAN-GP for stable adversarial training")
-    print("2. Soft-gate CAK with temperature annealing")
-    print("3. Guaranteed identity preservation when texture ≈ 0")
-    print("\nCheck wgan_texture_output/ for results!")
