@@ -69,7 +69,6 @@ class SoftGateCAKLayer(nn.Module):
         # - starts at 1.0: no amplification or reduction initially
         # - network learns optimal scaling during training
         # - global multiplier: affects all patterns equally
-        # - together with 9 conv weights + 1 bias = 11 total params
         self.scale = nn.Parameter(torch.ones(1) * 1.0) # could simplify to torch.tensor(1.0)
 
         self.register_buffer('epoch', torch.tensor(0))
