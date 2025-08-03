@@ -44,6 +44,9 @@ class SharedTextureDetector(nn.Module):
     def __init__(self):
         super(SharedTextureDetector, self).__init__()
         self.conv = nn.Conv2d(1, 1, kernel_size=(3, 3), padding=(1, 1))
+        # small initialization values (gain=0.1) allow the detector (D) to make subtle observations first, 
+        # then gradually learn what matters. zero bias ensures the detector starts neutral, 
+        # then learn the minimal intervention needed.
         nn.init.xavier_normal_(self.conv.weight, gain=0.1)
         nn.init.constant_(self.conv.bias, 0.)
 
