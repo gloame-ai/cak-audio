@@ -181,7 +181,7 @@ class TextureDataset(Dataset):
         print(f"Max absolute texture: {max(s['grain_density'] for s in self.segments):.3f}")
 
     def __len__(self):
-        return len(self.segments) * 2  # each segment used twice
+        return len(self.segments) * 2  # each segment used twice for identity pair and transformation pair
 
     def __getitem__(self, idx):
         if idx % 2 == 0:
