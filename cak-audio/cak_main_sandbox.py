@@ -268,8 +268,15 @@ def compute_gradient_penalty(critic, real_samples, fake_samples, texture_values)
         retain_graph=True
     )[0]
 
-    # grad penalty
+    # flatten spatial dims: [batch, 1, H, W] → [batch, H*W]
+    # we need the flat tensor to compute norms across all pixels per sample
     gradients = gradients.view(batch_size, -1)
+
+    # gradient penalty to enforce Lipschitz constraint
+    # this measures how strongly C reacts to input changes with a target norm of 1,
+    # a value of 1 gives us proportional feedback - the result is squared so that both >1 and <1
+    # are penalized equally and more severe for large deviations - the mean is the avg penalty
+    # across a given batch
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
 
     return gradient_penalty
