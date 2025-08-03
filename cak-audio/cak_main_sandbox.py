@@ -226,16 +226,38 @@ class TextureDataset(Dataset):
 
 # ============= GRADIENT PENALTY =============
 def compute_gradient_penalty(critic, real_samples, fake_samples, texture_values):
-    """compute gradient penalty for WGAN-GP"""
+    """
+    compute gradient penalty for WGAN-GP
+
+    the critic should have gradients with norm ≈ 1 everywhere, especially along straight lines
+    between real and fake samples. this prevents training instability and ensures meaningful
+    Wasserstein distance.
+
+    args:
+        critic: discriminator network
+        real_samples: real specs [B, 1, H, W]
+        fake_samples: generated specs [B, 1, H, W]
+        texture_values: control values [B] - must be detached
+
+    returns:
+        scalar penalty loss encouraged
+    """
     batch_size = real_samples.size(0)
 
-    # random interpolation
+    # random interpolation weights [0,1] for each batch element that broadcasts across spatial dims
+    # to blend entire specs consistently, we are teaching the critic to recognize the continuous
+    # real-fake spectrum, not just endpoints
     alpha = torch.rand(batch_size, 1, 1, 1, device=device)
+
+    # following WGAN-GP theory: optimal critic has unit gradient along these lines
     interpolated = alpha * real_samples + (1 - alpha) * fake_samples
+
+    # enable grad computation, without this, autograd.grad() will fail
     interpolated.requires_grad_(True)
 
-    # get critic scores
-    scores, _, _ = critic(interpolated, texture_values.detach())  # detach texture_values, important!
+    # get critic scores for interpolated samples
+    # detach texture_values to prevent grad flow through control values
+    scores, _, _ = critic(interpolated, texture_values.detach())  
 
     # compute gradients
     gradients = torch.autograd.grad(
