@@ -200,7 +200,7 @@ class TextureDataset(Dataset):
             # TRANSFORMATION: low → high texture
             n_segs = len(self.segments)
 
-            # sort by texture to get proper pairs
+            # sort samples by texture to get proper pairs
             sorted_indices = sorted(range(n_segs),
                                     key=lambda i: self.segments[i]['grain_density'])
 
