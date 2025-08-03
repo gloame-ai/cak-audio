@@ -150,17 +150,17 @@ class TextureCritic(nn.Module):
 
     def forward(self, x, claimed_texture):
         # get the raw critic score
-        score = self.realism_net(x).squeeze(1)
+        score = self.realism_net(x).squeeze(1) # how real does this look?
 
         # audit: measure texture
-        measured_texture = self.compute_texture_from_spec(x)
+        measured_texture = self.compute_texture_from_spec(x) # what do I measure?
 
         # violation (also outlined in paper)
         if claimed_texture.dim() > 1:
-            claimed_texture = claimed_texture.squeeze()
-        violation = torch.abs(measured_texture - claimed_texture)
+            claimed_texture = claimed_texture.squeeze() # scalar for comparison
+        violation = torch.abs(measured_texture - claimed_texture) # did G lie?
 
-        return score, violation, measured_texture
+        return score, violation, measured_texture # realness, honesty, actual measurement
 
 
 # ============= DATASET =============
