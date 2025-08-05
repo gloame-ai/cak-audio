@@ -6,7 +6,7 @@ A neural audio effect learned from 200 samples using a single 3×3 convolutional
 
 CAK (Conditioning Aware Kernels) discovers audio transformations directly from data through adversarial training. Unlike traditional DSP effects with fixed behaviors, CAK learns an adaptive transformation that responds differently to different input characteristics.
 
-Preprint available at: 
+Read the paper: [here](https://arxiv.org/abs/2508.02643)
 
 Listen to demos of observed behavior [here](https://drive.google.com/drive/folders/1SRRxOFX6zX1jJoMMP-KKnqdN4D2U38O3?usp=drive_link). (Audio files list CAK effect level as "0.0" up to "2.0") 
 
@@ -97,3 +97,4 @@ Roopam Garg, also of Gloame AI, implemented the demonstration GUI, contributed t
 
 ## Citations
 Rockman, A. (2025). CAK: Emergent Audio Effects from Minimal Deep Learning
+
