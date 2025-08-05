@@ -82,9 +82,11 @@ frequency-dependent processing, showing adaptive transformation based on input c
 ```  
 
 ## Troubleshooting
+```
 GUI appears cut off: Adjust window_width (line ~560) in cak_gui_minimal.py
 Import errors: Make sure all requirements are installed, especially sounddevice for audio playback
 CUDA/MPS errors: The code automatically falls back to CPU if GPU isn't available
+```
 
 ## License
 MIT License - see LICENSE file for details
@@ -97,4 +99,5 @@ Roopam Garg, also of Gloame AI, implemented the demonstration GUI, contributed t
 
 ## Citations
 Rockman, A. (2025). CAK: Emergent Audio Effects from Minimal Deep Learning
+
 
