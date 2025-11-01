@@ -2,10 +2,6 @@
 CAK (Conditioning Aware Kernels) Training Script
 Research code for "CAK: Emergent Audio Effects from Minimal Deep Learning"
 
-This code implements the training procedure described in our paper using
-WGAN-GP and the AuGAN framework. Note: 'grain_density' refers to the
-texture/control parameter from earlier experiments.
-
 Author: Austin Rockman (austin@gloame.ai)
 Date: July 2025
 """
@@ -17,7 +13,6 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import json
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import os
 
@@ -34,7 +29,7 @@ RECON_WEIGHT = 5.0  # reconstruction loss weight
 # temperature annealing for soft gate
 TEMP_INITIAL = 2.0
 TEMP_FINAL = 20.0
-ANNEAL_EPOCHS = 5  # epochs to reach final temperature
+ANNEAL_EPOCHS = 5
 
 
 # ============= SHARED DETECTOR =============
@@ -69,10 +64,10 @@ class SoftGateCAKLayer(nn.Module):
         # - starts at 1.0: no amplification or reduction initially
         # - network learns optimal scaling during training
         # - global multiplier: affects all patterns equally
-        self.scale = nn.Parameter(torch.ones(1) * 1.0) # could simplify to torch.tensor(1.0)
+        self.scale = nn.Parameter(torch.ones(1) * 1.0)
 
         self.register_buffer('epoch', torch.tensor(0))
-        self.register_buffer('threshold', torch.tensor(0.3))  # τ
+        self.register_buffer('threshold', torch.tensor(0.3)) # τ
 
     @property
     def temperature(self):
@@ -117,16 +112,16 @@ class TextureGenerator(nn.Module):
         return self.cak(x, texture_value)
 
 
-# ============= CRITIC (WGAN-GP STYLE) =============
+# ============= CRITIC =============
 class TextureCritic(nn.Module):
-    """WGAN-GP Critic (D) with audit game"""
+    """Critic (D) with audit game"""
 
     def __init__(self, shared_detector):
         super(TextureCritic, self).__init__()
         self.detector = shared_detector
 
-        # realism branch, outputs raw score - we are aware that WGAN typically does not use Norm layers
-        # we have only 200 samples, instance is used to make sure each spec gets normalized to its own statistics
+        # realism branch, outputs raw score
+        # instance norm used to make sure each spec gets normalized to its own statistics
         # just a config choice to prevent potentially weird batch interactions
         self.realism_net = nn.Sequential(
             nn.Conv2d(1, 32, 4, stride=2, padding=1),
@@ -150,26 +145,24 @@ class TextureCritic(nn.Module):
 
     def forward(self, x, claimed_texture):
         # get the raw critic score
-        score = self.realism_net(x).squeeze(1) # how real does this look?
+        score = self.realism_net(x).squeeze(1)
 
         # audit: measure texture
-        measured_texture = self.compute_texture_from_spec(x) # what do I measure?
+        measured_texture = self.compute_texture_from_spec(x)
 
         # violation (also outlined in paper)
         if claimed_texture.dim() > 1:
-            claimed_texture = claimed_texture.squeeze() # scalar for comparison
-        violation = torch.abs(measured_texture - claimed_texture) # did G lie?
+            claimed_texture = claimed_texture.squeeze()
+        violation = torch.abs(measured_texture - claimed_texture)
 
-        return score, violation, measured_texture # realness, honesty, actual measurement
+        return score, violation, measured_texture
 
 
 # ============= DATASET =============
 class TextureDataset(Dataset):
     """dataset loading from preprocessed spectrograms"""
 
-    # all control value scores live in the json, it's ideal to make your own, we do not share the json, but examples
-    # of our approach to formatting can be found in dataset_format_example.py
-    def __init__(self, metadata_path='cak_bigvgan_dataset/dataset_metadata.json'):
+    def __init__(self, metadata_path='cak_dataset/dataset_metadata.json'):
         with open(metadata_path, 'r') as f:
             self.metadata = json.load(f)
 
@@ -177,11 +170,11 @@ class TextureDataset(Dataset):
         self.data_dir = os.path.dirname(metadata_path)
 
         print(f"Loaded {len(self.segments)} segments")
-        print(f"Min absolute texture: {min(s['grain_density'] for s in self.segments):.3f}")
-        print(f"Max absolute texture: {max(s['grain_density'] for s in self.segments):.3f}")
+        print(f"Min absolute texture: {min(s['texture_value'] for s in self.segments):.3f}")
+        print(f"Max absolute texture: {max(s['texture_value'] for s in self.segments):.3f}")
 
     def __len__(self):
-        return len(self.segments) * 2  # each segment used twice for identity pair and transformation pair
+        return len(self.segments) * 2
 
     def __getitem__(self, idx):
         if idx % 2 == 0:
@@ -189,7 +182,6 @@ class TextureDataset(Dataset):
             seg_idx = idx // 2
             segment = self.segments[seg_idx]
 
-            # load STFT
             stft_path = os.path.join(self.data_dir, segment['stft_path'])
             stft_data = np.load(stft_path)
             spec = torch.FloatTensor(stft_data['magnitude']).unsqueeze(0)
@@ -200,9 +192,9 @@ class TextureDataset(Dataset):
             # TRANSFORMATION: low → high texture
             n_segs = len(self.segments)
 
-            # sort samples by texture to get proper pairs
+            # sort by texture to get proper pairs
             sorted_indices = sorted(range(n_segs),
-                                    key=lambda i: self.segments[i]['grain_density'])
+                                    key=lambda i: self.segments[i]['texture_value'])
 
             # get low and high texture segments
             low_idx = sorted_indices[idx % (n_segs // 2)]
@@ -211,53 +203,29 @@ class TextureDataset(Dataset):
             low_seg = self.segments[low_idx]
             high_seg = self.segments[high_idx]
 
-            # load STFTs
             low_stft = np.load(os.path.join(self.data_dir, low_seg['stft_path']))
             high_stft = np.load(os.path.join(self.data_dir, high_seg['stft_path']))
 
             low_spec = torch.FloatTensor(low_stft['magnitude']).unsqueeze(0)
             high_spec = torch.FloatTensor(high_stft['magnitude']).unsqueeze(0)
 
-            # texture control is the difference
-            texture_control = high_seg['grain_density'] - low_seg['grain_density']
+            texture_control = high_seg['texture_value'] - low_seg['texture_value']
 
             return low_spec, high_spec, torch.FloatTensor([texture_control])
 
 
 # ============= GRADIENT PENALTY =============
 def compute_gradient_penalty(critic, real_samples, fake_samples, texture_values):
-    """
-    compute gradient penalty for WGAN-GP
-
-    the critic should have gradients with norm ≈ 1 everywhere, especially along straight lines
-    between real and fake samples. this prevents training instability and ensures meaningful
-    Wasserstein distance.
-
-    args:
-        critic: discriminator network
-        real_samples: real specs [B, 1, H, W]
-        fake_samples: generated specs [B, 1, H, W]
-        texture_values: control values [B] - must be detached
-
-    returns:
-        scalar penalty loss encouraged
-    """
+    """compute gradient penalty for WGAN-GP"""
     batch_size = real_samples.size(0)
 
-    # random interpolation weights [0,1] for each batch element that broadcasts across spatial dims
-    # to blend entire specs consistently, we are teaching the critic to recognize the continuous
-    # real-fake spectrum, not just endpoints
+    # random interpolation
     alpha = torch.rand(batch_size, 1, 1, 1, device=device)
-
-    # following WGAN-GP theory: optimal critic has unit gradient along these lines
     interpolated = alpha * real_samples + (1 - alpha) * fake_samples
-
-    # enable grad computation, without this, autograd.grad() will fail
     interpolated.requires_grad_(True)
 
-    # get critic scores for interpolated samples
-    # detach texture_values to prevent grad flow through control values
-    scores, _, _ = critic(interpolated, texture_values.detach())  
+    # get critic scores
+    scores, _, _ = critic(interpolated, texture_values.detach())  # detach texture_values, important!
 
     # compute gradients
     gradients = torch.autograd.grad(
@@ -268,28 +236,19 @@ def compute_gradient_penalty(critic, real_samples, fake_samples, texture_values)
         retain_graph=True
     )[0]
 
-    # flatten spatial dims: [batch, 1, H, W] → [batch, H*W]
-    # we need the flat tensor to compute norms across all pixels per sample
+    # grad penalty
     gradients = gradients.view(batch_size, -1)
-
-    # gradient penalty to enforce Lipschitz constraint
-    # this measures how strongly C reacts to input changes with a target norm of 1,
-    # a value of 1 gives us proportional feedback - the result is squared so that both >1 and <1
-    # are penalized equally and more severe for large deviations - the mean is the avg penalty
-    # across a given batch
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
 
     return gradient_penalty
 
 
-# ============= TRAINING WITH WGAN-GP =============
-def train_wgan_gp(num_epochs=50):
+# ============= TRAINING =============
+def train(num_epochs=50):
     """train with WGAN-GP loss and soft-gate CAK"""
 
-    # create output directories
-    os.makedirs('wgan_texture_output', exist_ok=True)
-    os.makedirs('wgan_texture_output/checkpoints', exist_ok=True)
-    os.makedirs('wgan_texture_output/samples', exist_ok=True)
+    os.makedirs('cak_output', exist_ok=True)
+    os.makedirs('cak_output/checkpoints', exist_ok=True)
 
     # create SHARED detector
     shared_detector = SharedTextureDetector().to(device)
@@ -303,12 +262,12 @@ def train_wgan_gp(num_epochs=50):
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     print("\n=== Dataset Sanity Checks ===")
-    all_texture_densities = [seg['grain_density'] for seg in dataset.segments]
-    print(f"Texture density range in dataset:")
-    print(f"  Min: {min(all_texture_densities):.6f}")
-    print(f"  Max: {max(all_texture_densities):.6f}")
-    print(f"  Mean: {np.mean(all_texture_densities):.6f}")
-    print(f"  Std: {np.std(all_texture_densities):.6f}")
+    all_texture_values = [seg['texture_value'] for seg in dataset.segments]
+    print(f"Texture value range in dataset:")
+    print(f"  Min: {min(all_texture_values):.6f}")
+    print(f"  Max: {max(all_texture_values):.6f}")
+    print(f"  Mean: {np.mean(all_texture_values):.6f}")
+    print(f"  Std: {np.std(all_texture_values):.6f}")
 
     print("\nFirst batch check:")
     for i, (input_specs, target_specs, texture_values) in enumerate(dataloader):
@@ -327,7 +286,7 @@ def train_wgan_gp(num_epochs=50):
         print(f"  Pattern strength: {test_patterns.abs().mean().item():.6f}")
         print(f"  Output change: {(test_output - test_input).abs().mean().item():.6f}")
 
-    print("\n=== Starting WGAN-GP CAK Training ===")
+    print("\n=== Starting CAK Training ===")
     print(f"Shared detector: {sum(p.numel() for p in shared_detector.parameters())} params")
     print(f"Temperature schedule: {TEMP_INITIAL} → {TEMP_FINAL} over {ANNEAL_EPOCHS} epochs")
     print("=" * 50 + "\n")
@@ -340,10 +299,6 @@ def train_wgan_gp(num_epochs=50):
         'g_loss': [], 'c_loss': [], 'wasserstein_d': [],
         'violations': [], 'pattern_strength': [], 'temperature': [], 'scale': []
     }
-
-    print(f"\n=== WGAN-GP CAK Training with Soft Gate ===")
-    print(f"Shared detector: {sum(p.numel() for p in shared_detector.parameters())} params")
-    print(f"Temperature schedule: {TEMP_INITIAL} → {TEMP_FINAL} over {ANNEAL_EPOCHS} epochs")
 
     for epoch in range(num_epochs):
         # update temperature
@@ -413,16 +368,6 @@ def train_wgan_gp(num_epochs=50):
             g_loss.backward()
             g_optimizer.step()
 
-
-
-
-
-            """ REMAINING CODE IS JUST VISUALIZATION FUNCTIONS """
-
-
-
-
-
             # record metrics
             g_losses.append(g_loss.item())
             c_losses.append(c_loss.item())
@@ -480,14 +425,9 @@ def train_wgan_gp(num_epochs=50):
             print(f"  (Tested on sample {random_idx}/{len(dataset)})")
             print("-" * 40)
 
-        generator.train()
-        critic.train()
+            generator.train()
+            critic.train()
 
-        # visualize
-        if (epoch + 1) % 10 == 0:
-            visualize_results(generator, critic, dataloader, epoch + 1)
-
-        # save checkpoint
         if (epoch + 1) % 25 == 0:
             torch.save({
                 'generator': generator.state_dict(),
@@ -495,125 +435,19 @@ def train_wgan_gp(num_epochs=50):
                 'shared_detector': shared_detector.state_dict(),
                 'history': history,
                 'epoch': epoch
-            }, f'wgan_texture_output/checkpoints/epoch_{epoch + 1}.pt')
+            }, f'cak_output/checkpoints/epoch_{epoch + 1}.pt')
 
-    # save final
     torch.save({
         'generator': generator.state_dict(),
         'critic': critic.state_dict(),
         'shared_detector': shared_detector.state_dict(),
         'history': history
-    }, 'wgan_texture_output/final_wgan_texture.pt')
+    }, 'cak_output/final_model.pt')
 
-    plot_wgan_history(history)
     return history
 
 
-def visualize_results(generator, critic, dataloader, epoch):
-    """Visualize WGAN-GP results"""
-    generator.eval()
-    critic.eval()
-
-    # get a batch
-    for input_specs, target_specs, texture_values in dataloader:
-        input_specs = input_specs[:5].to(device)
-        target_specs = target_specs[:5].to(device)
-        texture_values = texture_values[:5].to(device)
-        break
-
-    with torch.no_grad():
-        # generate
-        processed_specs, patterns = generator(input_specs, texture_values)
-
-        # audit
-        scores, violations, measured = critic(processed_specs, texture_values)
-
-        # visualize
-        fig, axes = plt.subplots(3, 5, figsize=(20, 12))
-
-        for i in range(5):
-            # input
-            axes[0, i].imshow(input_specs[i, 0].cpu().numpy(),
-                              aspect='auto', origin='lower', cmap='viridis')
-            axes[0, i].set_title(f'Input (texture={texture_values[i].item():.2f})')
-
-            # output
-            axes[1, i].imshow(processed_specs[i, 0].cpu().numpy(),
-                              aspect='auto', origin='lower', cmap='viridis')
-            axes[1, i].set_title(f'Output (score={scores[i].item():.2f})')
-
-            # patterns
-            pattern = patterns[i, 0].cpu().numpy()
-            vmax = np.abs(pattern).max()
-            if vmax > 0:
-                axes[2, i].imshow(pattern, aspect='auto', origin='lower',
-                                  cmap='RdBu', vmin=-vmax, vmax=vmax)
-            axes[2, i].set_title(f'Pattern (viol={violations[i].item():.3f})')
-
-        plt.suptitle(f'WGAN-GP Results - Epoch {epoch} (T={generator.cak.temperature:.1f})',
-                     fontsize=16)
-        plt.tight_layout()
-        plt.savefig(f'wgan_texture_output/samples/epoch_{epoch}_wgan.png', dpi=150)
-        plt.close()
-
-    generator.train()
-    critic.train()
-
-
-def plot_wgan_history(history):
-    """Plot WGAN-GP training history"""
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-
-    # losses
-    axes[0, 0].plot(history['g_loss'], label='Generator')
-    axes[0, 0].plot(history['c_loss'], label='Critic')
-    axes[0, 0].set_title('Training Losses')
-    axes[0, 0].set_xlabel('Epoch')
-    axes[0, 0].legend()
-    axes[0, 0].grid(True)
-
-    # wasserstein distance
-    axes[0, 1].plot(history['wasserstein_d'])
-    axes[0, 1].set_title('Wasserstein Distance')
-    axes[0, 1].set_xlabel('Epoch')
-    axes[0, 1].grid(True)
-    axes[0, 1].axhline(y=0, color='k', linestyle='--', alpha=0.3)
-
-    # violations
-    axes[0, 2].plot(history['violations'], color='red')
-    axes[0, 2].set_title('Mean Violations')
-    axes[0, 2].set_xlabel('Epoch')
-    axes[0, 2].grid(True)
-
-    # pattern strength
-    axes[1, 0].plot(history['pattern_strength'], color='green')
-    axes[1, 0].set_title('Pattern Detection Strength')
-    axes[1, 0].set_xlabel('Epoch')
-    axes[1, 0].grid(True)
-
-    # temperature schedule
-    axes[1, 1].plot(history['temperature'], color='orange')
-    axes[1, 1].set_title('Soft Gate Temperature')
-    axes[1, 1].set_xlabel('Epoch')
-    axes[1, 1].set_ylabel('Temperature')
-    axes[1, 1].grid(True)
-
-    # violations vs Temperature
-    ax2 = axes[1, 2].twinx()
-    axes[1, 2].plot(history['violations'], 'r-', label='Violations')
-    ax2.plot(history['temperature'], 'orange', alpha=0.6, label='Temperature')
-    axes[1, 2].set_xlabel('Epoch')
-    axes[1, 2].set_ylabel('Violations', color='r')
-    ax2.set_ylabel('Temperature', color='orange')
-    axes[1, 2].set_title('Violations vs Temperature')
-    axes[1, 2].grid(True)
-
-    plt.suptitle('WGAN-GP CAK Training History', fontsize=16)
-    plt.tight_layout()
-    plt.savefig('wgan_texture_output/training_history.png', dpi=150)
-    plt.close()
-
-
 if __name__ == "__main__":
-    # train with WGAN-GP and soft gates
-    history = train_wgan_gp(num_epochs=100)
+    history = train(num_epochs=100)
+    print("\n=== Training Complete ===")
+    print("Check cak_output/ for results!")
