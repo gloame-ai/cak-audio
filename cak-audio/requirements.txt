@@ -6,3 +6,6 @@ soundfile
 matplotlib 
 tqdm 
 sounddevice
+json
+random
+pathlib
