@@ -38,7 +38,8 @@ Training Your Own Model
 1. Prepare your dataset, drop files into a "samples" folder and run `generate_texture_samples.py` (applies random control value scalars across samples)
 2. Generate STFT magnitude spectrograms with `dataset_preproc.py` (or adapt to your needs)
 3. Adjust hyperparameters in the training script if needed
-4. Run: `python cak_train` 
+4. Run: `python cak_train`
+5. The GUI can be used to hear your trained model, simply add your weights to the checkpoint_path around line ~319
 
 Note: Preprocessing code will truncate your samples to 15 seconds and apply a fade in/out to each clip. Please note the "self.gamma = 0.85" value. This is an optional midtone contrast boost applied during STFT normalization. This enhances mid-range spectral features and can be adjusted or removed based on your data characteristics. The training set was heavy in low end and gamma was used to offset potential spectral bias.
   
@@ -97,6 +98,7 @@ Roopam Garg, also of Gloame AI, implemented the demonstration GUI, contributed t
 
 ## Citations
 Rockman, A. (2025). CAK: Emergent Audio Effects from Minimal Deep Learning
+
 
 
 
