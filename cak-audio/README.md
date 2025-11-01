@@ -1,19 +1,14 @@
 # CAK: Emergent Audio Effects from Minimal Deep Learning
 
-A neural audio effect learned from 200 samples using a single 3×3 convolutional kernel.
+Generative neural audio effects learned from 200 samples using a single 3×3 convolutional kernel.
 
 ## Overview
 
 CAK (Conditioning Aware Kernels) discovers audio transformations directly from data through adversarial training. Unlike traditional DSP effects with fixed behaviors, CAK learns an adaptive transformation that responds differently to different input characteristics.
 
-Read the paper: [here](https://arxiv.org/abs/2508.02643)
+Read the paper: [here](https://arxiv.org/abs/2508.02643) 
 
-Listen to demos and GUI demonstrations of observed behavior [here](https://drive.google.com/drive/folders/1SRRxOFX6zX1jJoMMP-KKnqdN4D2U38O3?usp=drive_link). (Audio files list CAK effect level as "0.0" up to "2.0") 
-
-The model is easiest to use via Hugging Face, simply upload your sample and slide the "Texture Amount" to control the intensity of the neural transformation: https://huggingface.co/spaces/gloameai/cak-audio-processor
-
-
-Demo audio clips are provided for research and demonstration purposes only. Commercial use is not permitted. The clips remain property of their respective copyright holders and are used here under fair use. 
+The trained model is easiest to use via Hugging Face, simply upload your sample (mono or stereo) and slide the "Texture Amount" to control the intensity of the neural transformation: https://huggingface.co/spaces/gloameai/cak-audio-processor
 
 ## Installation
 
@@ -40,28 +35,29 @@ python cak_gui_minimal.py
 Note: Processing time depends on audio length. A 2-minute file takes ~3-4 seconds on Apple Silicon.
 
 Training Your Own Model
-1. Prepare your dataset in the format shown in `dataset_format_example.py`
-2. Generate STFT magnitude spectrograms using the parameters in `global_normalization_stats.json` (or adapt to your needs)
+1. Prepare your dataset, drop files into a "samples" folder and run `generate_texture_samples.py` (applies random control value scalars across samples)
+2. Generate STFT magnitude spectrograms with `dataset_preproc.py` (or adapt to your needs)
 3. Adjust hyperparameters in the training script if needed
-4. Run: `python cak_main_sandbox.py`
+4. Run: `python cak_train` 
 
-Note: Preprocessing code is not included, as implementations vary by use case. The expected format is magnitude spectrograms (2048 FFT, 512 hop) saved as .npz files with accompanying JSON metadata.
-
+Note: Preprocessing code will truncate your samples to 15 seconds and apply a fade in/out to each clip. Please note the "self.gamma = 0.85" value. This is an optional midtone contrast boost applied during STFT normalization. This enhances mid-range spectral features and can be adjusted or removed based on your data characteristics. The training set was heavy in low end and gamma was used to offset potential spectral bias.
+  
 Training with 200 15-second samples with our configuration takes ~2 hours for 100 epochs on Apple M4 (48GB). We have found that the model generalizes meaningfully by epoch 75, it is worth experimenting with different checkpoints to see what your model has learned along the way. Given that this is a single kernel method, learning should be fairly rapid. 
 
 ## How It Works 
 CAK uses a simple principle:
 output = input + (learned_pattern × control)
-The "audit game" (AuGAN) trains both generator and discriminator to cooperate in verifying that the control value was correctly applied, leading to learned transformations. Users should feel free to experiment with alternate kernel configurations or attempting to encode specific attributes paired with the control value. This is an area of research we are performing, with some promising results, but more ablations are needed. 
+The "audit game" (AuGAN) trains both generator and discriminator to cooperate in verifying that the control value was correctly applied, leading to learned transformations. Users should feel free to experiment with alternate kernel configurations or attempting to encode specific attributes paired with the control value.  
 
-Like any audio effect, results vary by source material. Some audio will result in a more nuanced effect than others. We have found that transient heavy material (like percussion/drum loops) respond very well to this implementation of the CAK processor. Further, dense mid-range spectra with rich harmonic content appears to generate a smearing effect, similar to what one may find in a chorus or phaser. And at other times, this CAK can sound like a full blown comb filter. We also acknowledge the limitations of mono outputs in the GUI. As we are introducing a baseline method, future applications will include stereo with further research. Happy experimenting! 
+Like any audio effect, results vary by source material. Some audio will result in a more nuanced effect than others. We have found that transient heavy material (like percussion/drum loops) respond very well to this implementation of the CAK processor. Further, dense mid-range spectra with rich harmonic content appears to generate a smearing effect, similar to what one may find in a chorus or phaser. And at other times, the model can sound like a full blown comb filter.  
 
 ## Project Structure
 ```
 cak-audio/
 ├── cak_gui_minimal.py           # GUI application
-├── cak_main_sandbox.py          # Training script
-├── dataset_format_example.py    # Dataset structure example
+├── cak_train.py                 # Training script
+├── dataset_preproc.py           # Audio preprocessing
+├── generate_texture_samples     # Applies random control value scalars to each sample in dataset
 ├── examples/                    # Additional ablations
 ├── norm_stats/                  # Normalization parameters
 │   └── global_normalization_stats.json
@@ -101,6 +97,7 @@ Roopam Garg, also of Gloame AI, implemented the demonstration GUI, contributed t
 
 ## Citations
 Rockman, A. (2025). CAK: Emergent Audio Effects from Minimal Deep Learning
+
 
 
 
